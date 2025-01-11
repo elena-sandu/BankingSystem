@@ -2,8 +2,8 @@ package org.poo.bank;
 
 public class SavingsAccount extends Account {
     private double interestRate;
-    public SavingsAccount(String IBAN, double balance,String currency, String accountType, double interestRate, String plan) {
-        super(IBAN, balance, currency, accountType, plan);
+    public SavingsAccount(String IBAN, double balance,String currency, String accountType, double interestRate) {
+        super(IBAN, balance, currency, accountType);
         this.interestRate = interestRate;
     }
     @Override

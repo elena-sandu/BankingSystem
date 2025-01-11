@@ -1,8 +1,8 @@
 package org.poo.bank;
 
 public class ClassicAccount extends Account {
-    public ClassicAccount(String IBAN, double balance, String currency, String accountType, String plan) {
-        super(IBAN, balance, currency, accountType, plan);
+    public ClassicAccount(String IBAN, double balance, String currency, String accountType) {
+        super(IBAN, balance, currency, accountType);
     }
     @Override
     public int hasInterestRate() {

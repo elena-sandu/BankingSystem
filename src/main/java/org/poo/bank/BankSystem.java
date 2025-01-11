@@ -25,6 +25,11 @@ public class BankSystem {
     public void addUsers(ObjectInput inputData) {
         for (UserInput userFor : inputData.getUsers()) {
             User user = new User(userFor.getFirstName(), userFor.getLastName(), userFor.getEmail(), userFor.getBirthDate(), userFor.getOccupation());
+            if(user.getOccupation().equals("student")) {
+                user.setPlan("student");
+            } else {
+                user.setPlan("standard");
+            }
             users.add(user);
         }
     }

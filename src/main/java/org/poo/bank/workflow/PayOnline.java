@@ -50,6 +50,9 @@ public class PayOnline implements Commands {
                 }
             }
         }
+        if(command.getAmount() <= 0) {
+            return;
+        }
         if(card == null) {
             ObjectNode errorNode = output.addObject();
             errorNode.put("command", "payOnline");
@@ -140,10 +143,10 @@ public class PayOnline implements Commands {
                 convertedAmount = command.getAmount() * conversion;
             }
             double extract = account.getBalance() - convertedAmount;
-            if(account.getPlan().equals("standard")) {
+            if(user.getPlan().equals("standard")) {
                 double comision = 0.002 * convertedAmount;
                 extract = extract - comision;
-            } else if (account.getPlan().equals("silver")) { //daca are plan silver si tranzactie >=500 , comision
+            } else if (user.getPlan().equals("silver")) { //daca are plan silver si tranzactie >=500 , comision
                 double money = command.getAmount();
                 if(!account.getCurrency().equals("RON")) {
                     double conversion = bankSystem.convert(account.getCurrency(), "RON");
@@ -263,7 +266,7 @@ public class PayOnline implements Commands {
                     }
                 }
                 if (spends >= 100 && spends < 300) {
-                    if (account.getPlan().equals("standard") || account.getPlan().equals("student")) {
+                    if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
                         double am = spends;
                         if(!account.getCurrency().equals("RON")) {
                             double conversion = bankSystem.convert("RON", account.getCurrency());
@@ -271,7 +274,7 @@ public class PayOnline implements Commands {
                         }
                         double c = 0.001 * am;
                         account.setBalance(account.getBalance() + c);
-                    } else if (account.getPlan().equals("silver")) {
+                    } else if (user.getPlan().equals("silver")) {
                         double am = spends;
                         if(!account.getCurrency().equals("RON")) {
                             double conversion = bankSystem.convert("RON", account.getCurrency());
@@ -289,7 +292,7 @@ public class PayOnline implements Commands {
                         account.setBalance(account.getBalance() + c);
                     }
                 } else if (spends >= 300 && spends < 500) {
-                    if (account.getPlan().equals("standard") || account.getPlan().equals("student")) {
+                    if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
                         double am = spends;
                         if(!account.getCurrency().equals("RON")) {
                             double conversion = bankSystem.convert("RON", account.getCurrency());
@@ -297,7 +300,7 @@ public class PayOnline implements Commands {
                         }
                         double c = 0.002 * am;
                         account.setBalance(account.getBalance() + c);
-                    } else if (account.getPlan().equals("silver")) {
+                    } else if (user.getPlan().equals("silver")) {
                         double am = spends;
                         if(!account.getCurrency().equals("RON")) {
                             double conversion = bankSystem.convert("RON", account.getCurrency());
@@ -315,7 +318,7 @@ public class PayOnline implements Commands {
                         account.setBalance(account.getBalance() + c);
                     }
                 } else if (spends >= 500) {
-                    if (account.getPlan().equals("standard") || account.getPlan().equals("student")) {
+                    if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
                         double am = spends;
                         if(!account.getCurrency().equals("RON")) {
                             double conversion = bankSystem.convert("RON", account.getCurrency());
@@ -323,7 +326,7 @@ public class PayOnline implements Commands {
                         }
                         double c = 0.0025 * am;
                         account.setBalance(account.getBalance() + c);
-                    } else if (account.getPlan().equals("silver")) {
+                    } else if (user.getPlan().equals("silver")) {
                         double am = spends;
                         if(!account.getCurrency().equals("RON")) {
                             double conversion = bankSystem.convert("RON", account.getCurrency());

@@ -40,24 +40,24 @@ public class UpgradePlan implements Commands {
             user.getTransactions().add(transactionFailed);
             return;
         }
-        if(account.getPlan().equals(command.getNewPlanType())) {
+        if(user.getPlan().equals(command.getNewPlanType())) {
             Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "The user already has the " + command.getNewPlanType() + " plan.").build();
             user.getTransactions().add(transactionFailed);
             return;
         }
         //verificam sa nu facem downgrade la plan
-        if(account.getPlan().equals("silver") && (command.getNewPlanType().equals("student") || command.getNewPlanType().equals("standard"))) {
+        if(user.getPlan().equals("silver") && (command.getNewPlanType().equals("student") || command.getNewPlanType().equals("standard"))) {
             Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "You cannot downgrade your plan.").build();
             user.getTransactions().add(transactionFailed);
             return;
         }
-        if(account.getPlan().equals("gold") && (command.getNewPlanType().equals("student") || command.getNewPlanType().equals("standard") || command.getNewPlanType().equals("silver"))) {
+        if(user.getPlan().equals("gold") && (command.getNewPlanType().equals("student") || command.getNewPlanType().equals("standard") || command.getNewPlanType().equals("silver"))) {
             Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "You cannot downgrade your plan.").build();
             user.getTransactions().add(transactionFailed);
             return;
         }
         //calculam fee ul si facem upgrade daca avem destui bani
-        if(account.getPlan().equals("standard") || account.getPlan().equals("student")) {
+        if(user.getPlan().equals("standard") || user.getPlan().equals("student")) {
             if(command.getNewPlanType().equals("silver")) {
                 double convertedAmount = 100;
                 if(!account.getCurrency().equals("RON")) {
@@ -72,9 +72,7 @@ public class UpgradePlan implements Commands {
                 }
                 double dif = account.getBalance() - convertedAmount;
                 account.setBalance(dif);
-                for (Account a : user.getAccounts()) {
-                    a.setPlan("silver");
-                }
+                user.setPlan("silver");
 
                 Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Upgrade plan")
                         .setAccountIBAN(account.getIBAN())
@@ -96,9 +94,8 @@ public class UpgradePlan implements Commands {
                 }
                 double dif = account.getBalance() - convertedAmount;
                 account.setBalance(dif);
-                for (Account a : user.getAccounts()) {
-                    a.setPlan("gold");
-                }
+                user.setPlan("gold");
+
                 Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Upgrade plan")
                         .setAccountIBAN(account.getIBAN())
                         .setNewPlanType(command.getNewPlanType())
@@ -106,11 +103,9 @@ public class UpgradePlan implements Commands {
                 user.getTransactions().add(transactionFailed);
                 return;
             }
-        } else if (account.getPlan().equals("silver")) {
+        } else if (user.getPlan().equals("silver")) {
                 if(account.getNumberOfPayments() >= 5) {
-                    for (Account a : user.getAccounts()) {
-                        a.setPlan("gold");
-                    }
+                    user.setPlan("gold");
 
                     Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Upgrade plan")
                             .setAccountIBAN(account.getIBAN())
@@ -132,10 +127,7 @@ public class UpgradePlan implements Commands {
                     }
                     double dif = account.getBalance() - convertedAmount;
                     account.setBalance(dif);
-                    for (Account a : user.getAccounts()) {
-                        a.setPlan("gold");
-                    }
-                    account.setPlan("gold");
+                    user.setPlan("gold");
                     Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Upgrade plan")
                             .setAccountIBAN(account.getIBAN())
                             .setNewPlanType(command.getNewPlanType())

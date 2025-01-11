@@ -30,23 +30,11 @@ public class AddAccount implements Commands {
         //creez contul in functie de tipul lui
         Account account;
         if(command.getAccountType().equals("classic")) {
-            if(!userWanted.getOccupation().equals("student")) {
-                account = new ClassicAccount(Iban, 0, command.getCurrency(), "classic", "standard");
-            } else {
-                account = new ClassicAccount(Iban, 0, command.getCurrency(), "classic", "student");
-            }
+            account = new ClassicAccount(Iban, 0, command.getCurrency(), "classic");
         } else if (command.getAccountType().equals("savings")) {
-            if(!userWanted.getOccupation().equals("student")) {
-                account = new SavingsAccount(Iban, 0, command.getCurrency(), "savings", command.getInterestRate(), "standard");
-            } else {
-                account = new SavingsAccount(Iban, 0, command.getCurrency(), "savings", command.getInterestRate(), "student");
-            }
+            account = new SavingsAccount(Iban, 0, command.getCurrency(), "savings", command.getInterestRate());
         } else {
-            if(!userWanted.getOccupation().equals("student")) {
-                account = new BusinessAccount(Iban, 0, command.getCurrency(), "business", "standard");
-            } else {
-                account = new BusinessAccount(Iban, 0, command.getCurrency(), "business", "student");
-            }
+            account = new BusinessAccount(Iban, 0, command.getCurrency(), "business");
         }
         userWanted.getAccounts().add(account);
         Transaction transaction = new Transaction.TransactionBuilder(timestamp, "New account created")

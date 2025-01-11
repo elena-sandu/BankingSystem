@@ -12,8 +12,8 @@ public class BusinessAccount extends Account {
     private double spendingLimit;
     private double depositLimit;
 
-    public BusinessAccount(String IBAN, double balance, String currency, String accountType, String plan) {
-        super(IBAN, balance, currency, accountType, plan);
+    public BusinessAccount(String IBAN, double balance, String currency, String accountType) {
+        super(IBAN, balance, currency, accountType);
         this.spendingLimit = 500;
         this.depositLimit = 500;
     }

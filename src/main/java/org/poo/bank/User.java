@@ -14,6 +14,7 @@ public class User{
     private boolean discountClothes;
     private boolean discountTech;
     private int acceptSplit;
+    private String plan = null;
 
     public User(String firstName, String lastName, String email, String birthDate, String occupation) {
         this.firstName = firstName;
@@ -115,5 +116,13 @@ public class User{
 
     public void setAcceptSplit(int acceptSplit) {
         this.acceptSplit = acceptSplit;
+    }
+
+    public String getPlan() {
+        return plan;
+    }
+
+    public void setPlan(String plan) {
+        this.plan = plan;
     }
 }

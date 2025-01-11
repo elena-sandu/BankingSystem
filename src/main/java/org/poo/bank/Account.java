@@ -11,12 +11,11 @@ public abstract class Account {
     private ArrayList<Card> cards = new ArrayList<>();
     private String alias;
     private ArrayList<Commerciant> commerciants;
-    private String plan;
     private int numberOfPayments;
     private int nrTransactions;
 
 
-    public Account(String IBAN, double balance, String currency, String accountType, String plan) {
+    public Account(String IBAN, double balance, String currency, String accountType) {
         this.IBAN = IBAN;
         this.balance = balance;
         this.currency = currency;
@@ -24,7 +23,6 @@ public abstract class Account {
         this.minBalance = 0;
         this.alias = "";
         this.commerciants = new ArrayList<>();
-        this.plan = plan;
         this.numberOfPayments = 0;
         this.nrTransactions = 0;
     }
@@ -93,13 +91,6 @@ public abstract class Account {
         this.commerciants = commerciants;
     }
 
-    public String getPlan() {
-        return plan;
-    }
-
-    public void setPlan(String plan) {
-        this.plan = plan;
-    }
 
     public int getNumberOfPayments() {
         return numberOfPayments;

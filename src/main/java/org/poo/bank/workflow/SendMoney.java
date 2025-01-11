@@ -53,9 +53,9 @@ public class SendMoney implements Commands {
             convertedAmount = command.getAmount() * conversion;
         }
         double comision = 0.0;
-        if (accountSender.getPlan().equals("standard")) {
+        if (sender.getPlan().equals("standard")) {
             comision = 0.002 * convertedAmount;
-        } else if (accountSender.getPlan().equals("silver")) {
+        } else if (sender.getPlan().equals("silver")) {
             double money = command.getAmount();
             if(!accountSender.getCurrency().equals("RON")) {
                 double conversion = bankSystem.convert(accountSender.getCurrency(), "RON");
@@ -132,10 +132,10 @@ public class SendMoney implements Commands {
                     }
                 }
                 if (spends >= 100 && spends < 300) {
-                    if (accountSender.getPlan().equals("standard") || accountSender.getPlan().equals("student")) {
+                    if (sender.getPlan().equals("standard") || sender.getPlan().equals("student")) {
                         double c = 0.001 * spends;
                         accountSender.setBalance(accountSender.getBalance() + c);
-                    } else if (accountSender.getPlan().equals("silver")) {
+                    } else if (sender.getPlan().equals("silver")) {
                         double c = 0.003 * spends;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     } else {
@@ -143,10 +143,10 @@ public class SendMoney implements Commands {
                         accountSender.setBalance(accountSender.getBalance() + c);
                     }
                 } else if (spends >= 300 && spends < 500) {
-                    if (accountSender.getPlan().equals("standard") || accountSender.getPlan().equals("student")) {
+                    if (sender.getPlan().equals("standard") || sender.getPlan().equals("student")) {
                         double c = 0.002 * spends;
                         accountSender.setBalance(accountSender.getBalance() + c);
-                    } else if (accountSender.getPlan().equals("silver")) {
+                    } else if (sender.getPlan().equals("silver")) {
                         double c = 0.004 * spends;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     } else {
@@ -154,10 +154,10 @@ public class SendMoney implements Commands {
                         accountSender.setBalance(accountSender.getBalance() + c);
                     }
                 } else if (spends >= 500) {
-                    if (accountSender.getPlan().equals("standard") || accountSender.getPlan().equals("student")) {
+                    if (sender.getPlan().equals("standard") || sender.getPlan().equals("student")) {
                         double c = 0.0025 * spends;
                         accountSender.setBalance(accountSender.getBalance() + c);
-                    } else if (accountSender.getPlan().equals("silver")) {
+                    } else if (sender.getPlan().equals("silver")) {
                         double c = 0.005 * spends;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     } else {

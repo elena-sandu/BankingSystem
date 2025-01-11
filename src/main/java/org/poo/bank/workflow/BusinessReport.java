@@ -50,7 +50,7 @@ public class BusinessReport implements Commands {
                 for (int i = 0; i < a.getManagers().size(); i++) {
                     ObjectNode managerNode = managersNode.addObject();
                     User aux = a.getManagers().get(i);
-                    managerNode.put("username", aux.getFirstName() + " " + aux.getLastName());
+                    managerNode.put("username", aux.getLastName() + " " + aux.getFirstName());
                     managerNode.put("spent", a.getSpentManagers().get(i));
                     managerNode.put("deposited", a.getDepositManagers().get(i));
                     totalSpent += a.getSpentManagers().get(i);
@@ -60,7 +60,7 @@ public class BusinessReport implements Commands {
                 for (int i = 0; i < a.getEmployees().size(); i++) {
                     ObjectNode eNode = employeesNode.addObject();
                     User aux = a.getEmployees().get(i);
-                    eNode.put("username", aux.getFirstName() + " " + aux.getLastName());
+                    eNode.put("username", aux.getLastName() + " " + aux.getFirstName());
                     eNode.put("spent", a.getSpentEmployees().get(i));
                     eNode.put("deposited", a.getDepositEmployees().get(i));
                     totalSpent += a.getSpentEmployees().get(i);

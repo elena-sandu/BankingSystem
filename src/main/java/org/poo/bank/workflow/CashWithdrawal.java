@@ -53,10 +53,10 @@ public class CashWithdrawal implements Commands {
                 convertedAmount = command.getAmount() * conversion;
             }
             double extract = account.getBalance() - convertedAmount;
-            if(account.getPlan().equals("standard")) {
+            if(user.getPlan().equals("standard")) {
                 double comision = 0.002 * convertedAmount;
                 extract = extract - comision;
-            } else if (account.getPlan().equals("silver")) { //daca are plan silver si tranzactie >=500 , comision
+            } else if (user.getPlan().equals("silver")) { //daca are plan silver si tranzactie >=500 , comision
                 if(command.getAmount() >= 500) {
                     double comision = 0.001 * convertedAmount;
                     extract = extract - comision;
