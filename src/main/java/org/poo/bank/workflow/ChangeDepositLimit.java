@@ -11,12 +11,12 @@ import org.poo.fileio.CommandInput;
 
 import java.util.ArrayList;
 
-public class ChangeSpendingLimit implements Commands {
+public class ChangeDepositLimit implements Commands {
     private final BankSystem bankSystem;
     private final CommandInput command;
     private int timestamp;
     private ArrayList<User> users;
-    public ChangeSpendingLimit(BankSystem bankSystem, CommandInput command) {
+    public ChangeDepositLimit(BankSystem bankSystem, CommandInput command) {
         this.bankSystem = bankSystem;
         this.command = command;
         this.timestamp = command.getTimestamp();
@@ -41,15 +41,16 @@ public class ChangeSpendingLimit implements Commands {
         if (!command.getEmail().equals(user.getEmail())) {
             ObjectMapper objectMapper = new ObjectMapper();
             ObjectNode delNode = objectMapper.createObjectNode();
-            delNode.put("command", "changeSpendingLimit");
+            delNode.put("command", "changeDepositLimit");
             delNode.put("timestamp", timestamp);
             ObjectNode stateNode = objectMapper.createObjectNode();
-            stateNode.put("description", "You must be owner in order to change spending limit.");
+            stateNode.put("description", "You must be owner in order to change deposit limit.");
             stateNode.put("timestamp", timestamp);
             delNode.set("output", stateNode);
             output.add(delNode);
             return;
         }
-        account.setSpendingLimit(command.getAmount());
+        account.setDepositLimit(command.getAmount());
     }
 }
+

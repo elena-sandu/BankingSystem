@@ -28,6 +28,16 @@ public class PrintTransactions implements Commands {
                 user = u;
             }
         }
+        ArrayList<Transaction> transactionsSorted = user.getTransactions();
+        for (int i = 0; i < transactionsSorted.size() - 1; i++) {
+            for (int j = 0; j < transactionsSorted.size() - i - 1; j++) {
+                if (transactionsSorted.get(j).getTimestamp() > transactionsSorted.get(j + 1).getTimestamp()) {
+                    Transaction temp = transactionsSorted.get(j);
+                    transactionsSorted.set(j, transactionsSorted.get(j + 1));
+                    transactionsSorted.set(j + 1, temp);
+                }
+            }
+        }
         ObjectNode tNode = output.addObject();
         tNode.put("command", "printTransactions");
         ArrayNode transactionsArray = tNode.putArray("output");
@@ -52,6 +62,8 @@ public class PrintTransactions implements Commands {
                 if (t.getCardHolder() != null) transactionNode.put("cardHolder", t.getCardHolder());
                 if (t.getAccount() != null) transactionNode.put("account", t.getAccount());
                 if (t.getCommerciant() != null) transactionNode.put("commerciant", t.getCommerciant());
+                if (t.getClassicIban() != null) transactionNode.put("classicAccountIBAN", t.getClassicIban());
+                if (t.getSavingsIban() != null) transactionNode.put("savingsAccountIBAN", t.getSavingsIban());
                 if (t.getNewPlanType() != null) transactionNode.put("newPlanType", t.getNewPlanType());
                 if (t.getAccountIBAN() != null) transactionNode.put("accountIBAN", t.getAccountIBAN());
                 if (t.getErrorSplit() != null) transactionNode.put("error", t.getErrorSplit());

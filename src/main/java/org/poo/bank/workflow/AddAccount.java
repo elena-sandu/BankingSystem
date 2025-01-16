@@ -34,7 +34,12 @@ public class AddAccount implements Commands {
         } else if (command.getAccountType().equals("savings")) {
             account = new SavingsAccount(Iban, 0, command.getCurrency(), "savings", command.getInterestRate());
         } else {
-            account = new BusinessAccount(Iban, 0, command.getCurrency(), "business");
+            double money = 500;
+            if (command.getCurrency() != "RON") {
+                double conversion = bankSystem.convert("RON", command.getCurrency());
+                money = money * conversion;
+            }
+            account = new BusinessAccount(Iban, 0, command.getCurrency(), "business", money, money);
         }
         userWanted.getAccounts().add(account);
         Transaction transaction = new Transaction.TransactionBuilder(timestamp, "New account created")

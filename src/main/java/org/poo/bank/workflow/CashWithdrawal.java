@@ -20,6 +20,15 @@ public class CashWithdrawal implements Commands {
     }
     @Override
     public void execute(ArrayNode output) {
+        if(command.getEmail() == "") {
+            ObjectNode errorNode = output.addObject();
+            errorNode.put("command", "cashWithdrawal");
+            ObjectNode outputNode = errorNode.putObject("output");
+            outputNode.put("timestamp", command.getTimestamp());
+            outputNode.put("description", "User not found");
+            errorNode.put("timestamp", command.getTimestamp());
+            return;
+        }
         User user = null;
         Account account = null;
         Card card = null;
@@ -41,8 +50,6 @@ public class CashWithdrawal implements Commands {
             outputNode.put("timestamp", command.getTimestamp());
             outputNode.put("description", "Card not found");
             errorNode.put("timestamp", command.getTimestamp());
-            //Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Account not found").build();
-            //user.getTransactions().add(transactionFailed);
             return;
         }
         if(!card.getStatus().equals("frozen")) {

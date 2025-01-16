@@ -47,13 +47,6 @@ public class Report implements Commands {
             ArrayNode transactionsNode = outputNode.putArray("transactions");
             for(Transaction t : transactions) {
                 if(t.getTimestamp() >= startTimestamp && t.getTimestamp() <= endTimestamp) {
-                    if(account.hasInterestRate() == 1) {
-                        if(t.getDescription().equals("Added interest rate") || t.getDescription().equals("Changed interest rate")) {
-                            ObjectNode tNode = transactionsNode.addObject();
-                            tNode.put("timestamp", t.getTimestamp());
-                            tNode.put("description", t.getDescription());
-                        }
-                    } else {
                         //verific sa fie tranzactiile legate de contul primit in input
                         boolean show = false;
                         if (t.getAccount() != null && t.getAccount().equals(account.getIBAN())) {
@@ -93,9 +86,11 @@ public class Report implements Commands {
                                     accountsArray.add(account2);
                                 }
                             }
+                            if (t.getNewPlanType() != null) tNode.put("newPlanType", t.getNewPlanType());
+                            if (t.getAccountIBAN() != null) tNode.put("accountIBAN", t.getAccountIBAN());
                         }
 
-                    }
+
                 }
             }
         } else {

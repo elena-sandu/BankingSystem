@@ -56,6 +56,8 @@ public class ChooseCommand {
                 return new AddNewBusinessAssociate(bankSystem, command);
             case "changeSpendingLimit":
                 return new ChangeSpendingLimit(bankSystem, command);
+            case "changeDepositLimit":
+                return new ChangeDepositLimit(bankSystem, command);
             case "businessReport":
                 return new BusinessReport(bankSystem, command);
             default:

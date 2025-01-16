@@ -38,7 +38,9 @@ public class ChangeInterestRate implements Commands {
             //schimbam rata daca gasim userul si contul este de tip savings
             if(account.hasInterestRate() == 1) {
                 account.setInterestRate(command.getInterestRate());
-                Transaction transaction = new Transaction.TransactionBuilder(command.getTimestamp(), "Interest rate of the account changed to " + command.getInterestRate()).build();
+                Transaction transaction = new Transaction.TransactionBuilder(command.getTimestamp(), "Interest rate of the account changed to " + command.getInterestRate())
+                        .setIban(account.getIBAN())
+                        .build();
                 user.getTransactions().add(transaction);
             } else {
                 ObjectNode errorNode = output.addObject();

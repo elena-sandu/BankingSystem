@@ -52,7 +52,9 @@ public class WithdrawSavings implements Commands {
         }
         if(count == 0) {
             //nu are cel putin un cont clasic
-            Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "You do not have a classic account.").build();
+            Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "You do not have a classic account.")
+                    .setIban(account.getIBAN())
+                    .build();
             user.getTransactions().add(transactionFailed);
             return;
         }
@@ -74,7 +76,9 @@ public class WithdrawSavings implements Commands {
             }
         }
         if(accountToTransfer == null) {
-            Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "You do not have a classic account.").build();
+            Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "You do not have a classic account.")
+                    .setIban(account.getIBAN())
+                    .build();
             user.getTransactions().add(transactionFailed);
             return;
         }
@@ -94,7 +98,12 @@ public class WithdrawSavings implements Commands {
         accountToTransfer.setBalance(accountToTransfer.getBalance() + command.getAmount());
         account.setBalance(account.getBalance() - convertedAmount);
         //adaug tranzactia de succes
-        Transaction transaction = new Transaction.TransactionBuilder(timestamp, "Savings withdrawal").build();
+        Transaction transaction = new Transaction.TransactionBuilder(timestamp, "Savings withdrawal")
+                .setClassicIban(accountToTransfer.getIBAN())
+                .setSavingsIban(account.getIBAN())
+                .setAmountPaidOnline(convertedAmount)
+                .build();
+        user.getTransactions().add(transaction);
         user.getTransactions().add(transaction);
     }
 }

@@ -27,6 +27,8 @@ public class Transaction {
     private String splitPaymentType;
     private int completedSplit;
     private List<Double> amountsToSplit;
+    private String classicIban;
+    private String savingsIban;
 
     private Transaction(TransactionBuilder builder) {
         this.timestamp = builder.timestamp;
@@ -52,6 +54,8 @@ public class Transaction {
         this.splitPaymentType = builder.splitPaymentType;
         this.completedSplit = builder.completedSplit;
         this.amountsToSplit = builder.amountsToSplit;
+        this.classicIban = builder.classicIban;
+        this.savingsIban = builder.savingsIban;
     }
 
     public int getTimestamp() {
@@ -146,8 +150,20 @@ public class Transaction {
         this.completedSplit = completedSplit;
     }
 
+    public void setErrorSplit(String errorSplit) {
+        this.errorSplit = errorSplit;
+    }
+
     public List<Double> getAmountsToSplit() {
         return amountsToSplit;
+    }
+
+    public String getClassicIban() {
+        return classicIban;
+    }
+
+    public String getSavingsIban() {
+        return savingsIban;
     }
 
     public static class TransactionBuilder {
@@ -174,6 +190,8 @@ public class Transaction {
         private String splitPaymentType;
         private int completedSplit;
         private List<Double> amountsToSplit;
+        private String classicIban;
+        private String savingsIban;
 
         public TransactionBuilder(int timestamp, String description) {
             this.timestamp = timestamp;
@@ -263,6 +281,14 @@ public class Transaction {
         }
         public TransactionBuilder setAmountsToSplit(List<Double> amountsToSplit) {
             this.amountsToSplit = amountsToSplit;
+            return this;
+        }
+        public TransactionBuilder setClassicIban(String classicIban) {
+            this.classicIban = classicIban;
+            return this;
+        }
+        public TransactionBuilder setSavingsIban(String savingsIban) {
+            this.savingsIban = savingsIban;
             return this;
         }
         public Transaction build() {

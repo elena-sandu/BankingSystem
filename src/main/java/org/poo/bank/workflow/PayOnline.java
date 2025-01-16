@@ -103,6 +103,12 @@ public class PayOnline implements Commands {
                 }
             }
             if (role == null) {
+                ObjectNode errorNode = output.addObject();
+                errorNode.put("command", "payOnline");
+                ObjectNode outputNode = errorNode.putObject("output");
+                outputNode.put("timestamp", command.getTimestamp());
+                outputNode.put("description", "Card not found");
+                errorNode.put("timestamp", command.getTimestamp());
                 return;
             }
             //verific sa nu depasesc limita contului daca e employee
@@ -112,14 +118,150 @@ public class PayOnline implements Commands {
                     double conversion = bankSystem.convert(command.getCurrency(), isBusiness.getCurrency());
                     convertedAmount = command.getAmount() * conversion;
                 }
+                double extract = isBusiness.getBalance() - convertedAmount;
+                //verific planul owner ului pentru comision
+                if (user.getPlan().equals("standard")) {
+                    double comision = 0.002 * convertedAmount;
+                    extract = extract - comision;
+                } else if (user.getPlan().equals("silver")) {
+                    double money = command.getAmount();
+                    if(!account.getCurrency().equals("RON")) {
+                        double conversion = bankSystem.convert(account.getCurrency(), "RON");
+                        money = command.getAmount() * conversion;
+                    }
+                    if(money >= 500) {
+                        double comision = 0.001 * convertedAmount;
+                        extract = extract - comision;
+                    }
+                }
+                if (extract < 0) {
+                    return;
+                }
                 if(convertedAmount > isBusiness.getSpendingLimit()) {
                     //nu are voie sa depaseasca limita
                     return;
                 } else {
-                    isBusiness.setBalance(isBusiness.getBalance() - convertedAmount);
+                    isBusiness.setBalance(extract);
+                    //aplicam cashback daca e cazul
+                    boolean exist = false;
+                    //adaugam si comerciantul catre care s-a facut plata si suma platita in lista de comercianti a contului
+                    for(Commerciant com : isBusiness.getCommerciants()) {
+                        if(com.getCommerciant().equals(command.getCommerciant())) {
+                            com.setMoney(com.getMoney() + convertedAmount);
+                            if(com.getCashbackStrategy().equals("nrOfTransactions")) {
+                                com.setTransactions(com.getTransactions() + 1);
+                            }
+                            exist = true;
+                        }
+                    }
+                    if (!exist) {
+                        Commerciant helper = null;
+                        //caut comerciantul in lista de comercianti a bancii
+                        for (Commerciant com : bankSystem.getCommerciants()) {
+                            if (com.getCommerciant().equals(command.getCommerciant())) {
+                                helper = com;
+                            }
+                        }
+                        Commerciant newCom = new Commerciant(helper.getCommerciant(), helper.getId(), helper.getAccount(), helper.getType(), helper.getCashbackStrategy(), convertedAmount, command.getTimestamp());
+                        if(newCom.getCashbackStrategy().equals("nrOfTransactions")) {
+                            newCom.setTransactions(1);
+                        }
+                        account.getCommerciants().add(newCom);
+                    }
+                    double cashback = 0.0;
+                    Commerciant newCom = null;
+                    for (Commerciant b : bankSystem.getCommerciants()) {
+                        if(b.getCommerciant().equals(command.getCommerciant())) {
+                            newCom = b;
+                        }
+                    }
+                    if (newCom != null) {
+                        if (newCom.getType().equals("Food") && user.isDiscountFood() == false) {
+                            //caut daca s-au efectuat minim 2 tranzactii la un comerciant
+                            for (Commerciant b : bankSystem.getCommerciants()) {
+                                if (b.getTransactions() > 2) {
+                                    cashback += 0.02 * convertedAmount;
+                                    user.setDiscountFood(true);
+                                }
+                            }
+                        }
+                        if (newCom.getType().equals("Clothes") && user.isDiscountClothes() == false) {
+                            for (Commerciant b : bankSystem.getCommerciants()) {
+                                if (b.getTransactions() > 5) {
+                                    cashback += 0.05 * convertedAmount;
+                                    user.setDiscountClothes(true);
+                                }
+                            }
+                        }
+                        if (newCom.getType().equals("Tech") && user.isDiscountTech() == false) {
+                            for (Commerciant b : bankSystem.getCommerciants()) {
+                                if (b.getTransactions() > 10) {
+                                    cashback += 0.10 * convertedAmount;
+                                    user.setDiscountTech(true);
+                                }
+                            }
+                        }
+                    }
+
+                    //aplic cashbackul
+                    if(cashback > 0) {
+                        isBusiness.setBalance(isBusiness.getBalance() + cashback);
+                    }
+                    if (newCom.getCashbackStrategy().equals("spendingThreshold")) {
+                        // calculez suma cheltuita pentru toti comerciantii de tip spendingThreshold
+                        double spends = 0.0;
+                        for (Commerciant com : isBusiness.getCommerciants()) {
+                            if (com.getCashbackStrategy().equals("spendingThreshold")) {
+                                //convertesc in RON
+                                double convertedSpend = com.getMoney();
+                                if (!isBusiness.getCurrency().equals("RON")) {
+                                    double conversion = bankSystem.convert(account.getCurrency(), "RON");
+                                    convertedSpend = com.getMoney() * conversion;
+                                }
+                                spends = spends + convertedSpend;
+                            }
+                        }
+                        if (spends >= 100 && spends < 300) {
+                            if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
+                                double c = 0.001 * convertedAmount;
+                                isBusiness.setBalance(isBusiness.getBalance() + c);
+                            } else if (user.getPlan().equals("silver")) {
+                                double c = 0.003 * convertedAmount;
+                                isBusiness.setBalance(isBusiness.getBalance() + c);
+                            } else {
+                                double c = 0.005 * convertedAmount;
+                                isBusiness.setBalance(isBusiness.getBalance() + c);
+                            }
+                        } else if (spends >= 300 && spends < 500) {
+                            if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
+                                double c = 0.002 * convertedAmount;
+                                isBusiness.setBalance(isBusiness.getBalance() + c);
+                            } else if (user.getPlan().equals("silver")) {
+                                double c = 0.004 * convertedAmount;
+                                isBusiness.setBalance(isBusiness.getBalance() + c);
+                            } else {
+                                double c = 0.0055 * convertedAmount;
+                                isBusiness.setBalance(isBusiness.getBalance() + c);
+                            }
+                        } else if (spends >= 500) {
+                            if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
+                                double c = 0.0025 * convertedAmount;
+                                isBusiness.setBalance(isBusiness.getBalance() + c);
+                            } else if (user.getPlan().equals("silver")) {
+                                double c = 0.005 * convertedAmount;
+                                isBusiness.setBalance(isBusiness.getBalance() + c);
+                            } else {
+                                double c = 0.007 * convertedAmount;
+                                isBusiness.setBalance(isBusiness.getBalance() + c);
+                            }
+                        }
+                    }
                     double aux = isBusiness.getSpentEmployees().get(index);
-                    aux = aux + command.getAmount();
+                    aux = aux + convertedAmount;
                     isBusiness.getSpentEmployees().set(index, aux);
+                    //isBusiness.getSpentTimeEmployees().add(timestamp);
+                    isBusiness.addCommerciantBusiness(command.getCommerciant(), solicitor, convertedAmount, "employee");
+
                 }
             } else if(role.equals("manager")) {
                 double convertedAmount = command.getAmount();
@@ -127,10 +269,145 @@ public class PayOnline implements Commands {
                     double conversion = bankSystem.convert(command.getCurrency(), isBusiness.getCurrency());
                     convertedAmount = command.getAmount() * conversion;
                 }
-                isBusiness.setBalance(isBusiness.getBalance() - convertedAmount);
+                double extract = isBusiness.getBalance() - convertedAmount;
+                //verific planul ownerului pentru comision
+                if (user.getPlan().equals("standard")) {
+                    double comision = 0.002 * convertedAmount;
+                    extract = extract - comision;
+                } else if (user.getPlan().equals("silver")) {
+                    double money = command.getAmount();
+                    if(!account.getCurrency().equals("RON")) {
+                        double conversion = bankSystem.convert(account.getCurrency(), "RON");
+                        money = command.getAmount() * conversion;
+                    }
+                    if(money >= 500) {
+                        double comision = 0.001 * convertedAmount;
+                        extract = extract - comision;
+                    }
+                }
+                if(extract < 0) {
+                    return;
+                }
+                isBusiness.setBalance(extract);
+                //aplicam cashback daca e cazul
+                boolean exist = false;
+                //adaugam si comerciantul catre care s-a facut plata si suma platita in lista de comercianti a contului
+                for(Commerciant com : isBusiness.getCommerciants()) {
+                    if(com.getCommerciant().equals(command.getCommerciant())) {
+                        com.setMoney(com.getMoney() + convertedAmount);
+                        if(com.getCashbackStrategy().equals("nrOfTransactions")) {
+                            com.setTransactions(com.getTransactions() + 1);
+                        }
+                        exist = true;
+                    }
+                }
+                if (!exist) {
+                    Commerciant helper = null;
+                    //caut comerciantul in lista de comercianti a bancii
+                    for (Commerciant com : bankSystem.getCommerciants()) {
+                        if (com.getCommerciant().equals(command.getCommerciant())) {
+                            helper = com;
+                        }
+                    }
+                    Commerciant newCom = new Commerciant(helper.getCommerciant(), helper.getId(), helper.getAccount(), helper.getType(), helper.getCashbackStrategy(), convertedAmount, command.getTimestamp());
+                    if(newCom.getCashbackStrategy().equals("nrOfTransactions")) {
+                        newCom.setTransactions(1);
+                    }
+                    account.getCommerciants().add(newCom);
+                }
+                double cashback = 0.0;
+                Commerciant newCom = null;
+                for (Commerciant b : bankSystem.getCommerciants()) {
+                    if(b.getCommerciant().equals(command.getCommerciant())) {
+                        newCom = b;
+                    }
+                }
+                if (newCom != null) {
+                    if (newCom.getType().equals("Food") && user.isDiscountFood() == false) {
+                        //caut daca s-au efectuat minim 2 tranzactii la un comerciant
+                        for (Commerciant b : bankSystem.getCommerciants()) {
+                            if (b.getTransactions() > 2) {
+                                cashback += 0.02 * convertedAmount;
+                                user.setDiscountFood(true);
+                            }
+                        }
+                    }
+                    if (newCom.getType().equals("Clothes") && user.isDiscountClothes() == false) {
+                        for (Commerciant b : bankSystem.getCommerciants()) {
+                            if (b.getTransactions() > 5) {
+                                cashback += 0.05 * convertedAmount;
+                                user.setDiscountClothes(true);
+                            }
+                        }
+                    }
+                    if (newCom.getType().equals("Tech") && user.isDiscountTech() == false) {
+                        for (Commerciant b : bankSystem.getCommerciants()) {
+                            if (b.getTransactions() > 10) {
+                                cashback += 0.10 * convertedAmount;
+                                user.setDiscountTech(true);
+                            }
+                        }
+                    }
+                }
+
+                //aplic cashbackul
+                if(cashback > 0) {
+                    isBusiness.setBalance(isBusiness.getBalance() + cashback);
+                }
+                if (newCom.getCashbackStrategy().equals("spendingThreshold")) {
+                    // calculez suma cheltuita pentru comerciantul meu
+                    double spends = 0.0;
+                    for (Commerciant com : isBusiness.getCommerciants()) {
+                        if (com.getCashbackStrategy().equals("spendingThreshold")) {
+                            //convertesc in RON
+                            double convertedSpend = com.getMoney();
+                            if (!isBusiness.getCurrency().equals("RON")) {
+                                double conversion = bankSystem.convert(account.getCurrency(), "RON");
+                                convertedSpend = com.getMoney() * conversion;
+                            }
+                            spends = spends + convertedSpend;
+                        }
+                    }
+                    if (spends >= 100 && spends < 300) {
+                        if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
+                            double c = 0.001 * convertedAmount;
+                            isBusiness.setBalance(isBusiness.getBalance() + c);
+                        } else if (user.getPlan().equals("silver")) {
+                            double c = 0.003 * convertedAmount;
+                            isBusiness.setBalance(isBusiness.getBalance() + c);
+                        } else {
+                            double c = 0.005 * convertedAmount;
+                            isBusiness.setBalance(isBusiness.getBalance() + c);
+                        }
+                    } else if (spends >= 300 && spends < 500) {
+                        if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
+                            double c = 0.002 * convertedAmount;
+                            isBusiness.setBalance(isBusiness.getBalance() + c);
+                        } else if (user.getPlan().equals("silver")) {
+                            double c = 0.004 * convertedAmount;
+                            isBusiness.setBalance(isBusiness.getBalance() + c);
+                        } else {
+                            double c = 0.0055 * convertedAmount;
+                            isBusiness.setBalance(isBusiness.getBalance() + c);
+                        }
+                    } else if (spends >= 500) {
+                        if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
+                            double c = 0.0025 * convertedAmount;
+                            isBusiness.setBalance(isBusiness.getBalance() + c);
+                        } else if (user.getPlan().equals("silver")) {
+                            double c = 0.005 * convertedAmount;
+                            isBusiness.setBalance(isBusiness.getBalance() + c);
+                        } else {
+                            double c = 0.007 * convertedAmount;
+                            isBusiness.setBalance(isBusiness.getBalance() + c);
+                        }
+                    }
+                }
                 double aux = isBusiness.getSpentManagers().get(index);
                 aux = aux + convertedAmount;
                 isBusiness.getSpentManagers().set(index, aux);
+                //isBusiness.getSpentTimeManagers().add(timestamp);
+                isBusiness.addCommerciantBusiness(command.getCommerciant(), solicitor, convertedAmount, "employee");
             }
             return;
         }
@@ -195,8 +472,8 @@ public class PayOnline implements Commands {
                     exist = true;
                 }
             }
-            Commerciant helper = null;
             if (!exist) {
+                Commerciant helper = null;
                 //caut comerciantul in lista de comercianti a bancii
                 for (Commerciant com : bankSystem.getCommerciants()) {
                     if (com.getCommerciant().equals(command.getCommerciant())) {
@@ -208,9 +485,6 @@ public class PayOnline implements Commands {
                     newCom.setTransactions(1);
                 }
                 account.getCommerciants().add(newCom);
-            }
-            if(helper == null) {
-                return;
             }
             double cashback = 0.0;
             Commerciant newCom = null;
@@ -251,7 +525,7 @@ public class PayOnline implements Commands {
             if(cashback > 0) {
                 account.setBalance(account.getBalance() + cashback);
             }
-            if (helper.getCashbackStrategy().equals("spendingThreshold")) {
+            if (newCom.getCashbackStrategy().equals("spendingThreshold")) {
                 // calculez suma cheltuita pentru toti comerciantii de tip spendingThreshold
                 double spends = 0.0;
                 for (Commerciant com : account.getCommerciants()) {
@@ -267,80 +541,35 @@ public class PayOnline implements Commands {
                 }
                 if (spends >= 100 && spends < 300) {
                     if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
-                        double am = spends;
-                        if(!account.getCurrency().equals("RON")) {
-                            double conversion = bankSystem.convert("RON", account.getCurrency());
-                            am = spends * conversion;
-                        }
-                        double c = 0.001 * am;
+                        double c = 0.001 * convertedAmount;
                         account.setBalance(account.getBalance() + c);
                     } else if (user.getPlan().equals("silver")) {
-                        double am = spends;
-                        if(!account.getCurrency().equals("RON")) {
-                            double conversion = bankSystem.convert("RON", account.getCurrency());
-                            am = spends * conversion;
-                        }
-                        double c = 0.003 * am;
+                        double c = 0.003 * convertedAmount;
                         account.setBalance(account.getBalance() + c);
                     } else {
-                        double am = spends;
-                        if(!account.getCurrency().equals("RON")) {
-                            double conversion = bankSystem.convert("RON", account.getCurrency());
-                            am = spends * conversion;
-                        }
-                        double c = 0.005 * am;
+                        double c = 0.005 * convertedAmount;
                         account.setBalance(account.getBalance() + c);
                     }
                 } else if (spends >= 300 && spends < 500) {
                     if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
-                        double am = spends;
-                        if(!account.getCurrency().equals("RON")) {
-                            double conversion = bankSystem.convert("RON", account.getCurrency());
-                            am = spends * conversion;
-                        }
-                        double c = 0.002 * am;
+                        double c = 0.002 * convertedAmount;
                         account.setBalance(account.getBalance() + c);
                     } else if (user.getPlan().equals("silver")) {
-                        double am = spends;
-                        if(!account.getCurrency().equals("RON")) {
-                            double conversion = bankSystem.convert("RON", account.getCurrency());
-                            am = spends * conversion;
-                        }
-                        double c = 0.004 * am;
+                        double c = 0.004 * convertedAmount;
                         account.setBalance(account.getBalance() + c);
                     } else {
-                        double am = spends;
-                        if(!account.getCurrency().equals("RON")) {
-                            double conversion = bankSystem.convert("RON", account.getCurrency());
-                            am = spends * conversion;
-                        }
-                        double c = 0.0055 * am;
+                        double c = 0.0055 * convertedAmount;
                         account.setBalance(account.getBalance() + c);
                     }
                 } else if (spends >= 500) {
                     if (user.getPlan().equals("standard") || user.getPlan().equals("student")) {
-                        double am = spends;
-                        if(!account.getCurrency().equals("RON")) {
-                            double conversion = bankSystem.convert("RON", account.getCurrency());
-                            am = spends * conversion;
-                        }
-                        double c = 0.0025 * am;
+                        double c = 0.0025 * convertedAmount;
                         account.setBalance(account.getBalance() + c);
                     } else if (user.getPlan().equals("silver")) {
-                        double am = spends;
-                        if(!account.getCurrency().equals("RON")) {
-                            double conversion = bankSystem.convert("RON", account.getCurrency());
-                            am = spends * conversion;
-                        }
-                        double c = 0.005 * am;
+                        double c = 0.005 * convertedAmount;
                         account.setBalance(account.getBalance() + c);
                     } else {
-                        double am = spends;
-                        if(!account.getCurrency().equals("RON")) {
-                            double conversion = bankSystem.convert("RON", account.getCurrency());
-                            am = spends * conversion;
-                        }
-                        double c = 0.007 * am;
+                        double c = 0.007 * convertedAmount;
                         account.setBalance(account.getBalance() + c);
                     }
                 }

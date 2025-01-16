@@ -16,19 +16,29 @@ public class SplitPayment implements Commands{
     private ArrayList<User> users;
     private int timestamp;
     List<String> accountsToSplit;
-    private boolean cancelled;
     ArrayList<Account> myAccounts = new ArrayList<>();
     ArrayList<User> myUsers = new ArrayList<>();
+    ArrayList<Integer> statusSplit = new ArrayList<>();
+    private String type;
     public SplitPayment(BankSystem bankSystem, CommandInput command) {
         this.bankSystem = bankSystem;
         this.command = command;
         this.users = bankSystem.getUsers();
         this.timestamp = command.getTimestamp();
         this.accountsToSplit = command.getAccounts();
-        this.cancelled = false;
+        this.type = command.getSplitPaymentType();
+        initializeStatusSplit();
+    }
+    private void initializeStatusSplit() {
+        statusSplit = new ArrayList<>(command.getAccounts().size());
+        for (int i = 0; i < command.getAccounts().size(); i++) {
+            statusSplit.add(0);
+        }
     }
     @Override
     public void execute(ArrayNode output) {
+        int nr = command.getAccounts().size();
+        double amountToSplit = command.getAmount() / nr;
         for(String ac : accountsToSplit) {
             for(User u : users) {
                 for(Account a : u.getAccounts()) {
@@ -45,6 +55,7 @@ public class SplitPayment implements Commands{
                                     .setCurrencySplit(command.getCurrency())
                                     .setAccountsSplit(accountsToSplit)
                                     .setIban(a.getIBAN())
+                                     .setAmountSplit(amountToSplit)
                                     .setCompletedSplit(0)
                                     .build();
                         } else {
@@ -63,37 +74,44 @@ public class SplitPayment implements Commands{
             }
         }
 
-        bankSystem.setSplitPayment(this);
+        bankSystem.getSplitPayments().add(this);
+
     }
 
     public int waitForPayment(ArrayNode output) {
-        for (User user : myUsers) {
-            if (user.getAcceptSplit() == -1) {
+        int n = 0;
+        for (Integer i : statusSplit) {
+            if (i == -1) {
                 // inseamna ca un user a refuzat plata si anulam pentru toti
-                this.cancelled = true;
-                resetSplit();
-                return -1;
-            } else if (user.getAcceptSplit() == 0) {
+                n = -1;
+            } else if (i == 0) {
                 //inseamna ca inca nu au acceptat toti userii
                 return 0;
             }
         }
-        makePayment(bankSystem, output);
+        makePayment(bankSystem, output, n);
         return 1;
     }
 
-    public void resetSplit() {
-        for (User u : myUsers) {
-            u.setAcceptSplit(0);
-        }
-    }
 
-    public void makePayment(BankSystem bankSystem, ArrayNode output) {
+    public void makePayment(BankSystem bankSystem, ArrayNode output, int n) {
         ArrayList<Double> amounts = new ArrayList<>();
         if (command.getSplitPaymentType().equals("custom")) {
             for (Double nr : command.getAmountForUsers()) {
                 amounts.add(nr);
             }
+        }
+        if (n == -1) {
+            //inseamna ca un user a anulat plata
+            for (int i = 0; i < amounts.size(); i++) {
+                for (Transaction t : myUsers.get(i).getTransactions()) {
+                    if(t.getSplitPaymentType() != null && t.getSplitPaymentType().equals(command.getSplitPaymentType())) {
+                        t.setCompletedSplit(1);
+                        t.setErrorSplit("One user rejected the payment.");
+                    }
+                }
+            }
+            return;
         }
         //verific daca au toti bani sa plateasca
         Account notMoney = null;
@@ -131,20 +149,16 @@ public class SplitPayment implements Commands{
                         }
                     }
                 }
-                resetSplit();
             } else { //se afiseaza eroare in toate conturile
                 for (int i = 0; i < amounts.size(); i++) {
-                    String twoDecimals = String.format("%.2f", command.getAmount());
-                    Transaction transactionFailed = new Transaction.TransactionBuilder(command.getTimestamp(), "Split payment of " + twoDecimals + " " + command.getCurrency())
-                            .setCurrencySplit(command.getCurrency())
-                            .setAccountsSplit(accountsToSplit)
-                            .setSplitPaymentType("custom")
-                            .setIban(myAccounts.get(i).getIBAN())
-                            .setErrorSplit("Account " + notMoney.getIBAN() + " has insufficient funds for a split payment.")
-                            .build();
-                    myUsers.get(i).getTransactions().add(transactionFailed);
+                    for (Transaction t : myUsers.get(i).getTransactions()) {
+                        if(t.getSplitPaymentType() != null && t.getSplitPaymentType().equals(command.getSplitPaymentType()) && t.getErrorSplit() == null) {
+                            t.setCompletedSplit(1);
+                            t.setErrorSplit("Account " + notMoney.getIBAN() + " has insufficient funds for a split payment.");
+                        }
+                    }
                 }
-                resetSplit();
+
             }
         } else {
             int nr = accountsToSplit.size();
@@ -176,21 +190,25 @@ public class SplitPayment implements Commands{
                         }
                     }
                 }
-                resetSplit();
             } else { //afisam eroare
                 for(int i = 0; i < myAccounts.size(); i++) {
-                    String twoDecimals = String.format("%.2f", command.getAmount());
-                    Transaction transactionFailed = new Transaction.TransactionBuilder(command.getTimestamp(), "Split payment of " + twoDecimals + " " + command.getCurrency())
-                            .setCurrencySplit(command.getCurrency())
-                            .setAccountsSplit(accountsToSplit)
-                            .setSplitPaymentType("equal")
-                            .setIban(myAccounts.get(i).getIBAN())
-                            .setErrorSplit("Account " + notMoney.getIBAN() + " has insufficient funds for a split payment.")
-                            .build();
-                    myUsers.get(i).getTransactions().add(transactionFailed);
+                    for (Transaction t : myUsers.get(i).getTransactions()) {
+                        if(t.getSplitPaymentType() != null && t.getSplitPaymentType().equals(command.getSplitPaymentType()) && t.getErrorSplit() == null) {
+                            t.setCompletedSplit(1);
+                            t.setErrorSplit("Account " + notMoney.getIBAN() + " has insufficient funds for a split payment.");
+                        }
+                    }
                 }
-                resetSplit();
+
             }
         }
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

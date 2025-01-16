@@ -3,13 +3,11 @@ package org.poo.bank.workflow;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.poo.bank.Account;
-import org.poo.bank.BankSystem;
-import org.poo.bank.BusinessAccount;
-import org.poo.bank.User;
+import org.poo.bank.*;
 import org.poo.fileio.CommandInput;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class BusinessReport implements Commands {
     private final BankSystem bankSystem;
@@ -68,6 +66,46 @@ public class BusinessReport implements Commands {
                 }
                 outputNode.put("total spent", totalSpent);
                 outputNode.put("total deposited", totalDeposit);
+                bNode.put("timestamp", timestamp);
+            } else if (command.getType().equals("commerciant")) {
+                ObjectNode bNode = output.addObject();
+                bNode.put("command", "businessReport");
+                ObjectNode outputNode = bNode.putObject("output");
+                outputNode.put("IBAN", a.getIBAN());
+                outputNode.put("balance", a.getBalance());
+                outputNode.put("currency", a.getCurrency());
+                outputNode.put("spending limit", a.getSpendingLimit());
+                outputNode.put("deposit limit", a.getDepositLimit());
+                outputNode.put("statistics type", "commerciant");
+
+                for (int i = 0; i < a.getCommerciantsReport().size() - 1; i++) {
+                    for (int j = 0; j < a.getCommerciantsReport().size() - i - 1; j++) {
+                        if (a.getCommerciantsReport().get(j).getName().compareTo(a.getCommerciantsReport().get(j + 1).getName()) > 0) {
+                            BusinessCommerciant temp = a.getCommerciantsReport().get(j);
+                            a.getCommerciantsReport().set(j, a.getCommerciantsReport().get(j + 1));
+                            a.getCommerciantsReport().set(j + 1, temp);
+                        }
+                    }
+                }
+
+                ArrayNode commerciantsNode = outputNode.putArray("commerciants");
+                for(BusinessCommerciant b : a.getCommerciantsReport()) {
+                    ObjectNode commerciantNode = commerciantsNode.addObject();
+                    commerciantNode.put("commerciant", b.getName());
+                    commerciantNode.put("total received", b.getSpent());
+                    ArrayNode managersNode = commerciantNode.putArray("managers");
+                    b.getManagers().stream()
+                            .sorted(Comparator.comparing(User::getLastName).thenComparing(User::getFirstName))
+                            .forEach(manager -> {
+                                managersNode.add(manager.getLastName() + " " + manager.getFirstName());
+                            });
+                    ArrayNode employeesNode = commerciantNode.putArray("employees");
+                    b.getEmployees().stream()
+                            .sorted(Comparator.comparing(User::getLastName).thenComparing(User::getFirstName))
+                            .forEach(employee -> {
+                                employeesNode.add(employee.getLastName() + " " + employee.getFirstName());
+                            });
+                }
                 bNode.put("timestamp", timestamp);
             }
         }

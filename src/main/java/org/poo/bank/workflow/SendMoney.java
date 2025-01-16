@@ -31,13 +31,13 @@ public class SendMoney implements Commands {
                     receiver = user;
                     accountReceiver = account;
                 //caut userul care trimite bani
-                } else if(account.getIBAN().equals(command.getAccount())) {
+                } else if(account.getIBAN().equals(command.getAccount()) || account.getAlias().equals(command.getAccount())) {
                     sender = user;
                     accountSender = account;
                 }
             }
         }
-        if(accountReceiver == null || accountSender == null) {
+        if(accountSender == null) {
             ObjectNode errorNode = output.addObject();
             errorNode.put("command", "sendMoney");
             ObjectNode outputNode = errorNode.putObject("output");
@@ -46,6 +46,144 @@ public class SendMoney implements Commands {
             errorNode.put("timestamp", command.getTimestamp());
             return;
         }
+        if(accountReceiver == null) {
+            Commerciant com = null;
+            boolean isCom = false;
+                //verific daca e cumva un comerciant
+                for(Commerciant c : bankSystem.getCommerciants()) {
+                    if(c.getAccount().equals(command.getReceiver())) {
+                        isCom = true;
+                        com = c;
+                    }
+            }
+            if(!isCom) {
+                ObjectNode errorNode = output.addObject();
+                errorNode.put("command", "sendMoney");
+                ObjectNode outputNode = errorNode.putObject("output");
+                outputNode.put("timestamp", command.getTimestamp());
+                outputNode.put("description", "User not found");
+                errorNode.put("timestamp", command.getTimestamp());
+                return;
+            }
+            double comision = 0.0;
+            double convertedAmount = command.getAmount();
+            if (sender.getPlan().equals("standard")) {
+                comision = 0.002 * convertedAmount;
+            } else if (sender.getPlan().equals("silver")) {
+                double money = command.getAmount();
+                if(!accountSender.getCurrency().equals("RON")) {
+                    double conversion = bankSystem.convert(accountSender.getCurrency(), "RON");
+                    money = command.getAmount() * conversion;
+                }
+                if(money >= 500) {
+                    comision = 0.001 * convertedAmount;
+                }
+            }
+            //verific daca userul are destui bani sa trimita
+            if(accountSender.getBalance() - command.getAmount() - comision < 0) {
+                Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Insufficient funds")
+                        .setIban(accountSender.getIBAN())
+                        .build();
+                sender.getTransactions().add(transactionFailed);
+                return;
+            }
+            //actualizez balantele conturilor
+            accountSender.setBalance(accountSender.getBalance() - command.getAmount() - comision);
+            double cashback = 0.0;
+            if (com != null) {
+                accountSender.setNrTransactions(accountSender.getNrTransactions() + 1);
+
+                if (com.getType().equals("Food") && sender.isDiscountFood() == false) {
+                    //caut daca s-au efectuat minim 2 tranzactii la un comerciant
+                    for (Commerciant b : bankSystem.getCommerciants()) {
+                        if (b.getTransactions() > 2) {
+                            cashback += 0.02 * convertedAmount;
+                            sender.setDiscountFood(true);
+                        }
+                    }
+                }
+                if (com.getType().equals("Clothes") && sender.isDiscountClothes() == false) {
+                    for (Commerciant b : bankSystem.getCommerciants()) {
+                        if (b.getTransactions() > 5) {
+                            cashback += 0.05 * convertedAmount;
+                            sender.setDiscountClothes(true);
+                        }
+                    }
+                }
+                if (com.getType().equals("Tech") && sender.isDiscountTech() == false) {
+                    for (Commerciant b : bankSystem.getCommerciants()) {
+                        if (b.getTransactions() > 10) {
+                            cashback += 0.10 * convertedAmount;
+                            sender.setDiscountTech(true);
+                        }
+                    }
+                }
+                if(cashback > 0) {
+                    accountSender.setBalance(accountSender.getBalance() + cashback);
+                }
+
+                if (com.getCashbackStrategy().equals("spendingThreshold")) {
+                    // calculez suma cheltuita pentru toti comerciantii de tip spendingThreshold
+                    double spends = 0.0;
+                    for (Commerciant comm : accountSender.getCommerciants()) {
+                        if (comm.getCommerciant().equals(com.getCommerciant())) {
+                            //convertesc in RON
+                            double convertedSpend = comm.getMoney();
+                            if (!accountSender.getCurrency().equals("RON")) {
+                                double conversion = bankSystem.convert(accountSender.getCurrency(), "RON");
+                                convertedSpend = comm.getMoney() * conversion;
+                            }
+                            spends = spends + convertedSpend;
+                        }
+                    }
+                    if (spends >= 100 && spends < 300) {
+                        if (sender.getPlan().equals("standard") || sender.getPlan().equals("student")) {
+                            double c = 0.001 * convertedAmount;
+                            accountSender.setBalance(accountSender.getBalance() + c);
+                        } else if (sender.getPlan().equals("silver")) {
+                            double c = 0.003 * convertedAmount;
+                            accountSender.setBalance(accountSender.getBalance() + c);
+                        } else {
+                            double c = 0.005 * convertedAmount;
+                            accountSender.setBalance(accountSender.getBalance() + c);
+                        }
+                    } else if (spends >= 300 && spends < 500) {
+                        if (sender.getPlan().equals("standard") || sender.getPlan().equals("student")) {
+                            double c = 0.002 * convertedAmount;
+                            accountSender.setBalance(accountSender.getBalance() + c);
+                        } else if (sender.getPlan().equals("silver")) {
+                            double c = 0.004 * convertedAmount;
+                            accountSender.setBalance(accountSender.getBalance() + c);
+                        } else {
+                            double c = 0.0055 * convertedAmount;
+                            accountSender.setBalance(accountSender.getBalance() + c);
+                        }
+                    } else if (spends >= 500) {
+                        if (sender.getPlan().equals("standard") || sender.getPlan().equals("student")) {
+                            double c = 0.0025 * convertedAmount;
+                            accountSender.setBalance(accountSender.getBalance() + c);
+                        } else if (sender.getPlan().equals("silver")) {
+                            double c = 0.005 * convertedAmount;
+                            accountSender.setBalance(accountSender.getBalance() + c);
+                        } else {
+                            double c = 0.007 * convertedAmount;
+                            accountSender.setBalance(accountSender.getBalance() + c);
+                        }
+                    }
+                }
+            }
+
+            Transaction transactionSent = new Transaction.TransactionBuilder(timestamp, command.getDescription())
+                    .setSenderIBAN(accountSender.getIBAN())
+                    .setReceiverIBAN(com.getAccount())
+                    .setAmount(command.getAmount())
+                    .setCurrency(accountSender.getCurrency())
+                    .setTransferType("sent")
+                    .build();
+            sender.getTransactions().add(transactionSent);
+            return;
+        }
+
         //verific daca suma trimisa este in aceeasi moneda cu contul celui primeste, altfel fac conversia
         double convertedAmount = command.getAmount();
         if(!accountReceiver.getCurrency().equals(accountSender.getCurrency())) {
@@ -121,7 +259,7 @@ public class SendMoney implements Commands {
                 // calculez suma cheltuita pentru toti comerciantii de tip spendingThreshold
                 double spends = 0.0;
                 for (Commerciant comm : accountSender.getCommerciants()) {
-                    if (comm.getCashbackStrategy().equals("spendingThreshold")) {
+                    if (comm.getCommerciant().equals(com.getCommerciant())) {
                         //convertesc in RON
                         double convertedSpend = comm.getMoney();
                         if (!accountSender.getCurrency().equals("RON")) {
@@ -133,35 +271,35 @@ public class SendMoney implements Commands {
                 }
                 if (spends >= 100 && spends < 300) {
                     if (sender.getPlan().equals("standard") || sender.getPlan().equals("student")) {
-                        double c = 0.001 * spends;
+                        double c = 0.001 * convertedAmount;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     } else if (sender.getPlan().equals("silver")) {
-                        double c = 0.003 * spends;
+                        double c = 0.003 * convertedAmount;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     } else {
-                        double c = 0.005 * spends;
+                        double c = 0.005 * convertedAmount;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     }
                 } else if (spends >= 300 && spends < 500) {
                     if (sender.getPlan().equals("standard") || sender.getPlan().equals("student")) {
-                        double c = 0.002 * spends;
+                        double c = 0.002 * convertedAmount;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     } else if (sender.getPlan().equals("silver")) {
-                        double c = 0.004 * spends;
+                        double c = 0.004 * convertedAmount;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     } else {
-                        double c = 0.0055 * spends;
+                        double c = 0.0055 * convertedAmount;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     }
                 } else if (spends >= 500) {
                     if (sender.getPlan().equals("standard") || sender.getPlan().equals("student")) {
-                        double c = 0.0025 * spends;
+                        double c = 0.0025 * convertedAmount;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     } else if (sender.getPlan().equals("silver")) {
-                        double c = 0.005 * spends;
+                        double c = 0.005 * convertedAmount;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     } else {
-                        double c = 0.007 * spends;
+                        double c = 0.007 * convertedAmount;
                         accountSender.setBalance(accountSender.getBalance() + c);
                     }
                 }

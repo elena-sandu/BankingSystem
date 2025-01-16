@@ -10,7 +10,7 @@ public class BankSystem {
     private ArrayList<User> users = new ArrayList<>();
     private ArrayList<Exchange> exchangeRates = new ArrayList<>();
     private ArrayList<Commerciant> commerciants = new ArrayList<>();
-    private SplitPayment splitPayment;
+    private ArrayList<SplitPayment> splitPayments = new ArrayList<>();
 
     private BankSystem() {
     }
@@ -70,12 +70,12 @@ public class BankSystem {
         this.commerciants = commerciants;
     }
 
-    public SplitPayment getSplitPayment() {
-        return splitPayment;
+    public ArrayList<SplitPayment> getSplitPayments() {
+        return splitPayments;
     }
 
-    public void setSplitPayment(SplitPayment splitPayment) {
-        this.splitPayment = splitPayment;
+    public void setSplitPayments(ArrayList<SplitPayment> splitPayments) {
+        this.splitPayments = splitPayments;
     }
 
     public void clearFields() {

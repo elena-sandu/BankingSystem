@@ -44,6 +44,7 @@ public class AddInterest implements Commands {
                 Transaction transaction = new Transaction.TransactionBuilder(command.getTimestamp(), "Interest rate income")
                         .setAmountPaidOnline(interestRate * printBalance)
                         .setCurrencySplit(account.getCurrency())
+                        .setIban(account.getIBAN())
                         .build();
                 user.getTransactions().add(transaction);
             } else {

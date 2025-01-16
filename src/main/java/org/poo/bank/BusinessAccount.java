@@ -9,13 +9,18 @@ public class BusinessAccount extends Account {
     private ArrayList<Double> spentManagers =  new ArrayList<>();
     private ArrayList<Double> depositEmployees =  new ArrayList<>();
     private ArrayList<Double> depositManagers =  new ArrayList<>();
+    //private ArrayList<Integer> depositTimeEmployees =  new ArrayList<>();
+    //private ArrayList<Integer> depositTimeManagers =  new ArrayList<>();
+    //private ArrayList<Integer> spentTimeEmployees =  new ArrayList<>();
+    //private ArrayList<Integer> spentTimeManagers=  new ArrayList<>();
     private double spendingLimit;
     private double depositLimit;
+    private ArrayList<BusinessCommerciant> commerciantsReport =  new ArrayList<>();
 
-    public BusinessAccount(String IBAN, double balance, String currency, String accountType) {
+    public BusinessAccount(String IBAN, double balance, String currency, String accountType, double spendingLimit, double depositLimit) {
         super(IBAN, balance, currency, accountType);
-        this.spendingLimit = 500;
-        this.depositLimit = 500;
+        this.spendingLimit = spendingLimit;
+        this.depositLimit = depositLimit;
     }
     @Override
     public int hasInterestRate() {
@@ -95,10 +100,71 @@ public class BusinessAccount extends Account {
     public void setDepositLimit(double depositLimit) {
         this.depositLimit = depositLimit;
     }
+    /*
+    public ArrayList<Integer> getDepositTimeEmployees() {
+        return depositTimeEmployees;
+    }
+
+    public void setDepositTimeEmployees(ArrayList<Integer> depositTimeEmployees) {
+        this.depositTimeEmployees = depositTimeEmployees;
+    }
+
+    public ArrayList<Integer> getDepositTimeManagers() {
+        return depositTimeManagers;
+    }
+
+    public void setDepositTimeManagers(ArrayList<Integer> depositTimeManagers) {
+        this.depositTimeManagers = depositTimeManagers;
+    }
+
+    public ArrayList<Integer> getSpentTimeEmployees() {
+        return spentTimeEmployees;
+    }
+
+    public void setSpentTimeEmployees(ArrayList<Integer> spentTimeEmployees) {
+        this.spentTimeEmployees = spentTimeEmployees;
+    }
+
+    public ArrayList<Integer> getSpentTimeManagers() {
+        return spentTimeManagers;
+    }
+
+    public void setSpentTimeManagers(ArrayList<Integer> spentTimeManagers) {
+        this.spentTimeManagers = spentTimeManagers;
+    }
+*/
+
+    public ArrayList<BusinessCommerciant> getCommerciantsReport() {
+        return commerciantsReport;
+    }
+
+    public void setCommerciantsReport(ArrayList<BusinessCommerciant> commerciantsReport) {
+        this.commerciantsReport = commerciantsReport;
+    }
 
     @Override
     public int hasBusiness() {
         return 1;
+    }
+
+    public void addCommerciantBusiness(String name, User user, double amount, String role) {
+        BusinessCommerciant comB = null;
+        for(BusinessCommerciant b : this.commerciantsReport) {
+            if(b.getName().equals(name)) {
+                comB = b;
+            }
+        }
+        if(comB == null) {
+            comB = new BusinessCommerciant(name);
+            this.commerciantsReport.add(comB);
+        }
+        comB.setSpent(comB.getSpent() + amount);
+        if(role.equals("employee")) {
+            comB.getEmployees().add(user);
+
+        } else if(role.equals("manager")) {
+            comB.getManagers().add(user);
+        }
     }
 }
 

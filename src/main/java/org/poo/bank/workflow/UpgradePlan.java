@@ -1,6 +1,8 @@
 package org.poo.bank.workflow;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.poo.bank.Account;
 import org.poo.bank.BankSystem;
 import org.poo.bank.Transaction;
@@ -33,15 +35,21 @@ public class UpgradePlan implements Commands {
             }
         }
         if(user == null) {
-            return;
-        }
-        if(account == null) {
-            Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Account not found").build();
-            user.getTransactions().add(transactionFailed);
+            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectNode delNode = objectMapper.createObjectNode();
+            delNode.put("command", "upgradePlan");
+            delNode.put("timestamp", timestamp);
+            ObjectNode stateNode = objectMapper.createObjectNode();
+            stateNode.put("description", "Account not found");
+            stateNode.put("timestamp", timestamp);
+            delNode.set("output", stateNode);
+            output.add(delNode);
             return;
         }
         if(user.getPlan().equals(command.getNewPlanType())) {
-            Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "The user already has the " + command.getNewPlanType() + " plan.").build();
+            Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "The user already has the " + command.getNewPlanType() + " plan.")
+                    .setIban(account.getIBAN())
+                    .build();
             user.getTransactions().add(transactionFailed);
             return;
         }
@@ -77,6 +85,7 @@ public class UpgradePlan implements Commands {
                 Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Upgrade plan")
                         .setAccountIBAN(account.getIBAN())
                         .setNewPlanType(command.getNewPlanType())
+                        .setIban(account.getIBAN())
                         .build();
                 user.getTransactions().add(transactionFailed);
                 return;
@@ -99,6 +108,7 @@ public class UpgradePlan implements Commands {
                 Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Upgrade plan")
                         .setAccountIBAN(account.getIBAN())
                         .setNewPlanType(command.getNewPlanType())
+                        .setIban(account.getIBAN())
                         .build();
                 user.getTransactions().add(transactionFailed);
                 return;
@@ -110,6 +120,7 @@ public class UpgradePlan implements Commands {
                     Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Upgrade plan")
                             .setAccountIBAN(account.getIBAN())
                             .setNewPlanType(command.getNewPlanType())
+                            .setIban(account.getIBAN())
                             .build();
                     user.getTransactions().add(transactionFailed);
                     return;
@@ -131,6 +142,7 @@ public class UpgradePlan implements Commands {
                     Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "Upgrade plan")
                             .setAccountIBAN(account.getIBAN())
                             .setNewPlanType(command.getNewPlanType())
+                            .setIban(account.getIBAN())
                             .build();
                     user.getTransactions().add(transactionFailed);
                     return;

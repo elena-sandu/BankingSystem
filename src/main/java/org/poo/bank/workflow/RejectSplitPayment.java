@@ -1,6 +1,8 @@
 package org.poo.bank.workflow;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.poo.bank.BankSystem;
 import org.poo.bank.User;
 import org.poo.fileio.CommandInput;
@@ -28,16 +30,38 @@ public class RejectSplitPayment implements Commands {
             }
         }
         if (user != null) {
-            user.setAcceptSplit(-1);
-            SplitPayment check = bankSystem.getSplitPayment();
-            if (check != null) {
-                int result = check.waitForPayment(output);
-                if (result == 0) {
-                    //inseamna ca inca nu au acceptat toti userii
-                } else if (result == -1) {
-                    bankSystem.setSplitPayment(null);
+            int indexSplitCurrent = 0;
+            int indexUser = 0;
+            for (int i = 0; i < bankSystem.getSplitPayments().size(); i++) {
+                SplitPayment current = bankSystem.getSplitPayments().get(i);
+                int aux = current.myUsers.indexOf(user);
+                if (aux != -1 && current.getType().equals(command.getSplitPaymentType()) && current.statusSplit.get(aux) == 0) {
+                    indexSplitCurrent = i;
+                    break;
                 }
             }
+            SplitPayment check = bankSystem.getSplitPayments().get(indexSplitCurrent);
+            if (check != null) {
+                for (int i = 0; i < check.myUsers.size(); i++) {
+                    if(check.myUsers.get(i).getEmail().equals(command.getEmail())) {
+                        indexUser = i;
+                        break;
+                    }
+                }
+                check.statusSplit.set(indexUser, -1);
+                int result = check.waitForPayment(output);
+                bankSystem.getSplitPayments().remove(check);
+            }
+        } else {
+            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectNode delNode = objectMapper.createObjectNode();
+            delNode.put("command", "rejectSplitPayment");
+            delNode.put("timestamp", timestamp);
+            ObjectNode stateNode = objectMapper.createObjectNode();
+            stateNode.put("description", "User not found");
+            stateNode.put("timestamp", timestamp);
+            delNode.set("output", stateNode);
+            output.add(delNode);
         }
     }
 }
