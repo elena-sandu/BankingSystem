@@ -3,11 +3,13 @@ package org.poo.bank.workflow;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.poo.bank.Account;
+import org.poo.bank.accounts.Account;
 import org.poo.bank.BankSystem;
 import org.poo.bank.Card;
 import org.poo.bank.User;
-
+/**
+ * Implements a command to print all details of a user.
+ */
 public class PrintUsers implements Commands {
     private final BankSystem bankSystem;
     private final int timestamp;

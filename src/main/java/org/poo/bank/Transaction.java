@@ -2,7 +2,10 @@ package org.poo.bank;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * Represents a transaction within the banking system.
+ * This class provides a numerous fields to cover various aspects of a banking transaction.
+ */
 public class Transaction {
     private int timestamp;
     private String description;
@@ -165,7 +168,10 @@ public class Transaction {
     public String getSavingsIban() {
         return savingsIban;
     }
-
+    /**
+     * Builder class for Transaction. This class implements the Builder pattern to facilitate the construction
+     * of a Transaction instance with different combinations of parameters.
+     */
     public static class TransactionBuilder {
         private int timestamp;
         private String description;

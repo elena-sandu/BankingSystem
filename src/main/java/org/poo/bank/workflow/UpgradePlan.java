@@ -3,14 +3,16 @@ package org.poo.bank.workflow;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.poo.bank.Account;
+import org.poo.bank.accounts.Account;
 import org.poo.bank.BankSystem;
 import org.poo.bank.Transaction;
 import org.poo.bank.User;
 import org.poo.fileio.CommandInput;
 
 import java.util.ArrayList;
-
+/**
+ * Handles the upgrade of a user's plan in the banking system.
+ */
 public class UpgradePlan implements Commands {
     private final BankSystem bankSystem;
     private final CommandInput command;
@@ -22,8 +24,14 @@ public class UpgradePlan implements Commands {
         this.timestamp = command.getTimestamp();
         this.users = bankSystem.getUsers();
     }
+    /**
+     * Executes the upgrade plan command, checking for sufficient funds
+     * and valid upgrade plans.
+     * @param output The ArrayNode to store the results or errors of the operation.
+     */
     @Override
     public void execute(ArrayNode output) {
+        //find user
         User user = null;
         Account account = null;
         for (User u : users) {
@@ -53,7 +61,7 @@ public class UpgradePlan implements Commands {
             user.getTransactions().add(transactionFailed);
             return;
         }
-        //verificam sa nu facem downgrade la plan
+        //verify not to make a downgrade
         if(user.getPlan().equals("silver") && (command.getNewPlanType().equals("student") || command.getNewPlanType().equals("standard"))) {
             Transaction transactionFailed = new Transaction.TransactionBuilder(timestamp, "You cannot downgrade your plan.").build();
             user.getTransactions().add(transactionFailed);
@@ -64,7 +72,7 @@ public class UpgradePlan implements Commands {
             user.getTransactions().add(transactionFailed);
             return;
         }
-        //calculam fee ul si facem upgrade daca avem destui bani
+        //calculate the fee and upgrade if enough money
         if(user.getPlan().equals("standard") || user.getPlan().equals("student")) {
             if(command.getNewPlanType().equals("silver")) {
                 double convertedAmount = 100;

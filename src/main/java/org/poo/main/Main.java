@@ -91,8 +91,7 @@ public final class Main {
         Invoker commandInvoker = new Invoker();
         for(CommandInput command : commands) {
             Commands c = ChooseCommand.create(command, bankSystem);
-            if(c != null)
-                commandInvoker.newCommand(c, output);
+            commandInvoker.newCommand(c, output);
         }
 
         ObjectWriter objectWriter = objectMapper.writerWithDefaultPrettyPrinter();

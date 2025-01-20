@@ -8,7 +8,9 @@ import org.poo.bank.User;
 import org.poo.fileio.CommandInput;
 
 import java.util.ArrayList;
-
+/**
+ * Implements a command to print all transactions of a user.
+ */
 public class PrintTransactions implements Commands {
     private final BankSystem bankSystem;
     private final CommandInput command;

@@ -1,8 +1,22 @@
 package org.poo.bank.workflow;
 
 import org.poo.bank.BankSystem;
+import org.poo.bank.workflow.accountOperations.*;
+import org.poo.bank.workflow.business.AddNewBusinessAssociate;
+import org.poo.bank.workflow.business.ChangeDepositLimit;
+import org.poo.bank.workflow.business.ChangeSpendingLimit;
+import org.poo.bank.workflow.cardOperations.CheckCardStatus;
+import org.poo.bank.workflow.cardOperations.CreateCard;
+import org.poo.bank.workflow.cardOperations.CreateOneTimeCard;
+import org.poo.bank.workflow.cardOperations.DeleteCard;
+import org.poo.bank.workflow.reports.BusinessReport;
+import org.poo.bank.workflow.reports.Report;
+import org.poo.bank.workflow.reports.SpendingsReport;
+import org.poo.bank.workflow.transactions.*;
 import org.poo.fileio.CommandInput;
-
+/**
+ * Factory class responsible for creating instances of specific commands based on the input.
+ */
 public class ChooseCommand {
     public static Commands create(CommandInput command, BankSystem bankSystem) {
         switch(command.getCommand()) {
@@ -61,8 +75,7 @@ public class ChooseCommand {
             case "businessReport":
                 return new BusinessReport(bankSystem, command);
             default:
-                //throw new IllegalArgumentException("command not found");
-                return null;
+                throw new IllegalArgumentException("command not found");
         }
     }
 }
